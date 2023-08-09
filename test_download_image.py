@@ -1,9 +1,7 @@
-import responses
 import pytest
 from index import download_image
 from moto import mock_s3
 import boto3
-import requests_mock
 import os
 import csv
 
@@ -30,10 +28,9 @@ api_key = settings['api_key']
 date = settings['date']
 url_to_mock = f"https://api.nasa.gov/planetary/earth/imagery?lon={lon}&lat={lat}&dim={dim}&date={date}&api_key={api_key}"
 
-# Define una respuesta ficticia para esa URL
 mock_response_content = b"fake_image_content"
 
-# Define un diccionario con los datos de un campo
+# Define un diccionario con los datos de un campo que esta en el csv
 field = {
     'lat': 29.78,
     'lon': -95.33,
@@ -47,15 +44,8 @@ bucket_name = "test-bucket"
 
 @mock_s3
 def test_download_image(requests_mock):
-    # Crea un bucket falso en S3
     s3_client.create_bucket(Bucket=bucket_name)
-
-    # Registra la URL con la respuesta ficticia
     requests_mock.get(url_to_mock, content=mock_response_content)
-
-    # Llama a la función que quieres probar (no es necesario pasar una sesión)
     download_image(date, field, api_key, s3_client, bucket_name)
-
-    # Verifica que la imagen se haya almacenado en S3
     response = s3_client.get_object(Bucket=bucket_name, Key=f"{field['field_id']}/{date}_imagery.png")
     assert response['Body'].read() == mock_response_content
